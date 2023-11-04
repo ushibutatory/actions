@@ -1,0 +1,47 @@
+on:
+  workflow_call:
+    inputs:
+      solution_dir:
+        required: true
+        type: string
+      with_nuget:
+        required: false
+        type: boolean
+        default: false
+      with_test:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      nuget_user:
+        required: false
+      nuget_pass:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-dotnet@v3
+      - name: Add NuGet Source
+        if: ${{ inputs.with_nuget }}
+        run: |
+          dotnet nuget add source ${NUGET_SOURCE} -u ${NUGET_USER} -p ${NUGET_PASS} --store-password-in-clear-text
+        env:
+          NUGET_SOURCE: https://nuget.pkg.github.com/gozolop-core/index.json
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+          NUGET_PASS: ${{ secrets.NUGET_PASS }}
+      - name: Build
+        run: |
+          cd "${GITHUB_WORKSPACE}/${SOLUTION_DIR}/"
+          dotnet build
+      - name: Test
+        if: ${{ inputs.with_test }}
+        run: |
+          cd "${GITHUB_WORKSPACE}/${SOLUTION_DIR}/"
+          dotnet test --no-build
+    env:
+      SOLUTION_DIR: ${{ inputs.solution_dir }}

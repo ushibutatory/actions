@@ -1,0 +1,65 @@
+on:
+  workflow_call:
+    inputs:
+      solution_dir:
+        required: true
+        type: string
+      project_dir:
+        required: true
+        type: string
+      with_nuget:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      aws_region:
+        required: true
+      aws_iam_role:
+        required: true
+      nuget_user:
+        required: false
+      nuget_pass:
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+      - name: Add NuGet Source
+        if: ${{ inputs.with_nuget }}
+        run: |
+          dotnet nuget add source ${NUGET_SOURCE} -u ${NUGET_USER} -p ${NUGET_PASS} --store-password-in-clear-text
+        env:
+          NUGET_SOURCE: https://nuget.pkg.github.com/gozolop-core/index.json
+          NUGET_USER: ${{ secrets.nuget_user }}
+          NUGET_PASS: ${{ secrets.nuget_pass }}
+      - name: Build
+        run: |
+          cd "${GITHUB_WORKSPACE}/${SOLUTION_DIR}/"
+          dotnet build
+          dotnet pack
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ secrets.aws_region }}
+          role-to-assume: ${{ secrets.aws_iam_role }}
+      - name: Setup Lambda Tools
+        run: |
+          dotnet tool install -g Amazon.Lambda.Tools
+          export PATH="$PATH:/root/.dotnet/tools"
+          dotnet tool list -g
+      - name: Deploy
+        run: |
+          cd "${GITHUB_WORKSPACE}/${SOLUTION_DIR}/${PROJECT_DIR}"
+          dotnet lambda deploy-function
+        env:
+          PROJECT_DIR: ${{ inputs.project_dir }}
+    env:
+      SOLUTION_DIR: ${{ inputs.solution_dir }}

@@ -46,7 +46,7 @@ jobs:
           dotnet build
           dotnet pack
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ secrets.aws_region }}
           role-to-assume: ${{ secrets.aws_iam_role }}

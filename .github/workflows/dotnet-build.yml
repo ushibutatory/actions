@@ -32,8 +32,8 @@ jobs:
           dotnet nuget add source ${NUGET_SOURCE} -u ${NUGET_USER} -p ${NUGET_PASS} --store-password-in-clear-text
         env:
           NUGET_SOURCE: https://nuget.pkg.github.com/gozolop-core/index.json
-          NUGET_USER: ${{ secrets.NUGET_USER }}
-          NUGET_PASS: ${{ secrets.NUGET_PASS }}
+          NUGET_USER: ${{ secrets.nuget_user }}
+          NUGET_PASS: ${{ secrets.nuget_pass }}
       - name: Build
         run: |
           cd "${GITHUB_WORKSPACE}/${SOLUTION_DIR}/"
